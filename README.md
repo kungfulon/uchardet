@@ -157,6 +157,7 @@ Techniques used by universalchardet are described at http://www.mozilla.org/proj
   * Vietnamese:
     * VISCII
     * Windows-1258
+    * TCVN5712-3
   * Others
     * WINDOWS-1252
 
