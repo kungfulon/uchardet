@@ -54,7 +54,7 @@ use_ascii = False
 # Quoted-Readable (VIQR) or VSCII Mnemonic (VSCII-MNEM),[4] though usage of either
 # variable-width scheme has declined dramatically following the adoption of
 # Unicode on the World Wide Web.
-charsets = ['WINDOWS-1258', 'VISCII']
+charsets = ['WINDOWS-1258', 'VISCII', 'TCVN5712-3']
 
 ## Optional Properties ##
 

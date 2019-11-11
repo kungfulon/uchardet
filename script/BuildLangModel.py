@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # ##### BEGIN LICENSE BLOCK #####
@@ -60,14 +60,14 @@ usage = 'Usage: {} <LANG-CODE>\n' \
         '\nEx: `{} fr`'.format(__file__, __file__)
 
 description = "Internal tool for uchardet to generate language data."
-cmdline = optparse.OptionParser(usage, description = description)
+cmdline = optparse.OptionParser(usage, description=description)
 cmdline.add_option('--max-page',
-                   help = 'Maximum number of Wikipedia pages to parse (useful for debugging).',
-                   action = 'store', type = 'int', dest = 'max_page', default = None)
+                   help='Maximum number of Wikipedia pages to parse (useful for debugging).',
+                   action='store', type='int', dest='max_page', default=None)
 cmdline.add_option('--max-depth',
-                   help = 'Maximum depth when following links from start page (default: 2).',
-                   action = 'store', type = 'int',
-                   dest = 'max_depth', default = 2)
+                   help='Maximum depth when following links from start page (default: 2).',
+                   action='store', type='int',
+                   dest='max_depth', default=2)
 (options, langs) = cmdline.parse_args()
 if len(langs) < 1:
     print("Please select at least one language code.\n")
@@ -93,7 +93,7 @@ sys.path = sys_path_backup
 charsets = charsets.db.load(lang.charsets)
 
 if not hasattr(lang, 'start_pages') or lang.start_pages is None or \
-   lang.start_pages == []:
+        lang.start_pages == []:
     # Let's start with the main page, assuming it should have links
     # to relevant pages. In locale wikipedia, this page is usually redirected
     # to a relevant page.
@@ -114,19 +114,21 @@ if not hasattr(lang, 'custom_case_mapping'):
 if not hasattr(lang, 'alphabet') or lang.alphabet is None:
     lang.alphabet = None
 
+
 def local_lowercase(text, lang):
     lowercased = ''
     for l in text:
         if lang.custom_case_mapping is not None and \
-           l in lang.custom_case_mapping:
+                l in lang.custom_case_mapping:
             lowercased += lang.custom_case_mapping[l]
         elif l.isupper() and \
-             lang.case_mapping and \
-             len(unicodedata.normalize('NFC', l.lower())) == 1:
+                lang.case_mapping and \
+                len(unicodedata.normalize('NFC', l.lower())) == 1:
             lowercased += l.lower()
         else:
             lowercased += l
     return lowercased
+
 
 if lang.alphabet is not None:
     # Allowing to provide an alphabet in string format rather than list.
@@ -135,18 +137,18 @@ if lang.alphabet is not None:
         lang.alphabet += [chr(l) for l in range(65, 91)] + [chr(l) for l in range(97, 123)]
     if lang.case_mapping or lang.custom_case_mapping is not None:
         lang.alphabet = [local_lowercase(l, lang) for l in lang.alphabet]
-        #alphabet = []
-        #for l in lang.alphabet:
-            #if l.isupper() and \
-               #lang.custom_case_mapping is not None and \
-               #l in lang.custom_case_mapping:
-                #alphabet.append(lang.custom_case_mapping[l])
-            #elif l.isupper() and \
-                 #lang.case_mapping and \
-                 #len(unicodedata.normalize('NFC', l.lower())) == 1:
-                #alphabet.append(l.lower())
-            #else:
-                #alphabet.append(l)
+        # alphabet = []
+        # for l in lang.alphabet:
+        # if l.isupper() and \
+        # lang.custom_case_mapping is not None and \
+        # l in lang.custom_case_mapping:
+        # alphabet.append(lang.custom_case_mapping[l])
+        # elif l.isupper() and \
+        # lang.case_mapping and \
+        # len(unicodedata.normalize('NFC', l.lower())) == 1:
+        # alphabet.append(l.lower())
+        # else:
+        # alphabet.append(l)
     lang.alphabet = list(set(lang.alphabet))
 
 # Starting processing.
@@ -163,6 +165,7 @@ characters = {}
 # the value is the occurrence count.
 sequences = {}
 prev_char = None
+
 
 def process_text(content, lang):
     global charsets
@@ -195,7 +198,17 @@ def process_text(content, lang):
             for charset in charsets:
                 # Does the character exist in the charset?
                 try:
-                    codepoint = char.encode(charset, 'ignore')
+                    if hasattr(charsets[charset], 'encode'):
+                        codepoint = charsets[charset].encode(char)
+
+                        if charsets[charset].charmap[codepoint] == LET:
+                            characters[ord(char)] = 1
+                            is_letter = True
+                            break
+                        else:
+                            continue
+                    else:
+                        codepoint = char.encode(charset, 'ignore')
                 except LookupError:
                     # unknown encoding. Use iconv from command line instead.
                     try:
@@ -232,6 +245,7 @@ def process_text(content, lang):
         else:
             prev_char = None
 
+
 def visit_pages(titles, depth, lang, logfd):
     global visited_pages
     global options
@@ -242,7 +256,7 @@ def visit_pages(titles, depth, lang, logfd):
     next_titles = []
     for title in titles:
         if options.max_page is not None and \
-           len(visited_pages) > options.max_page:
+                len(visited_pages) > options.max_page:
             return
         if title in visited_pages:
             continue
@@ -265,7 +279,8 @@ def visit_pages(titles, depth, lang, logfd):
     if depth >= options.max_depth:
         return
 
-    visit_pages (next_titles, depth + 1, lang, logfd)
+    visit_pages(next_titles, depth + 1, lang, logfd)
+
 
 language_c = lang.name.replace('-', '_').title()
 build_log = current_dir + '/BuildLangModelLogs/Lang{}Model.log'.format(language_c)
@@ -295,7 +310,7 @@ occurrences = sum(characters.values())
 logfd.write("\n{} characters appeared {} times.\n".format(n_char, occurrences))
 for char in characters:
     ratios[char] = characters[char] / occurrences
-    #logfd.write("Character '{}' usage: {} ({} %)\n".format(chr(char),
+    # logfd.write("Character '{}' usage: {} ({} %)\n".format(chr(char),
     #                                                       characters[char],
     #                                                       ratios[char] * 100))
 
@@ -344,25 +359,25 @@ c_code += ' * On: {}\n'.format(str(datetime.datetime.now()))
 c_code += ' **/\n'
 
 c_code += \
-"""
-/* Character Mapping Table:
- * ILL: illegal character.
- * CTR: control character specific to the charset.
- * RET: carriage/return.
- * SYM: symbol (punctuation) that does not belong to word.
- * NUM: 0 - 9.
- *
- * Other characters are ordered by probabilities
- * (0 is the most common character in the language).
- *
- * Orders are generic to a language. So the codepoint with order X in
- * CHARSET1 maps to the same character as the codepoint with the same
- * order X in CHARSET2 for the same language.
- * As such, it is possible to get missing order. For instance the
- * ligature of 'o' and 'e' exists in ISO-8859-15 but not in ISO-8859-1
- * even though they are both used for French. Same for the euro sign.
- */
-"""
+    """
+    /* Character Mapping Table:
+     * ILL: illegal character.
+     * CTR: control character specific to the charset.
+     * RET: carriage/return.
+     * SYM: symbol (punctuation) that does not belong to word.
+     * NUM: 0 - 9.
+     *
+     * Other characters are ordered by probabilities
+     * (0 is the most common character in the language).
+     *
+     * Orders are generic to a language. So the codepoint with order X in
+     * CHARSET1 maps to the same character as the codepoint with the same
+     * order X in CHARSET2 for the same language.
+     * As such, it is possible to get missing order. For instance the
+     * ligature of 'o' and 'e' exists in ISO-8859-15 but not in ISO-8859-1
+     * even though they are both used for French. Same for the euro sign.
+     */
+    """
 
 for charset in charsets:
     charset_c = charset.replace('-', '_').title()
@@ -383,9 +398,12 @@ for charset in charsets:
                 CTOM_str += 'SYM,'
             elif cp_type == NUM:
                 CTOM_str += 'NUM,'
-            else: # LET
+            else:  # LET
                 try:
-                    uchar = bytes([cp]).decode(charset)
+                    if hasattr(charsets[charset], 'decode'):
+                        uchar = charsets[charset].decode(cp)
+                    else:
+                        uchar = bytes([cp]).decode(charset)
                 except UnicodeDecodeError:
                     print('Unknown character 0X{:X} in {}.'.format(cp, charset))
                     print('Please verify your charset specification.\n')
@@ -406,10 +424,10 @@ for charset in charsets:
                     except FileNotFoundError:
                         print('Error: "{}" is not a supported charset by python and `iconv` is not installed.\n')
                         exit(1)
-                #if lang.case_mapping and uchar.isupper() and \
-                   #len(unicodedata.normalize('NFC', uchar.lower())) == 1:
-                   # Unless we encounter special cases of characters with no
-                   # composed lowercase, we lowercase it.
+                # if lang.case_mapping and uchar.isupper() and \
+                # len(unicodedata.normalize('NFC', uchar.lower())) == 1:
+                # Unless we encounter special cases of characters with no
+                # composed lowercase, we lowercase it.
                 if lang.case_mapping or lang.custom_case_mapping is not None:
                     uchar = local_lowercase(uchar, lang)
                 for order, (char, ratio) in enumerate(sorted_ratios):
@@ -495,7 +513,7 @@ for line in range(0, freq_count):
                             LM_str += '1,'
                         break
                 else:
-                    pass # impossible!
+                    pass  # impossible!
                     LM_str += '0,'
             else:
                 LM_str += '0,'
@@ -517,7 +535,6 @@ for charset in charsets:
     SM_str += '\n  "{}"'.format(charset)
     SM_str += '\n};'
     c_code += SM_str
-
 
 lang_model_file = current_dir + '/../src/LangModels/Lang{}Model.cpp'.format(language_c)
 with open(lang_model_file, 'w') as cpp_fd:
