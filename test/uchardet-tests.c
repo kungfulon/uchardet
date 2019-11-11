@@ -72,8 +72,6 @@ detect(FILE *fp)
         charset[i] = tolower(charset[i]);
     }
 
-	fprintf(stderr,
-			"detected charset: %s\n", charset);
     uchardet_delete(handle);
 
     return charset;
